@@ -1,0 +1,2 @@
+include src/wettingfront_lges/samples/*
+include src/wettingfront_lges/py.typed

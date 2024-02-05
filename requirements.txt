@@ -1,0 +1,10 @@
+importlib_metadata;python_version<"3.10"
+importlib_resources;python_version<"3.10"
+numpy >= 1.21
+scipy
+opencv-python-headless
+Pillow
+PyYAML
+tqdm
+matplotlib
+fillyte-wettingfront
