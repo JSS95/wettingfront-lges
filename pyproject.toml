@@ -24,7 +24,6 @@ doc = [
     "furo",
     "sphinx",
     "sphinx-autoapi",
-    "sphinx-tabs >= 3.4.5",
 ]
 dev = [
     "flake8",
