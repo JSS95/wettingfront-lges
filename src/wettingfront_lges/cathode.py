@@ -15,10 +15,10 @@ import tqdm  # type: ignore
 from scipy.ndimage import gaussian_filter1d  # type: ignore[import]
 from scipy.signal import find_peaks, peak_prominences  # type: ignore[import]
 
-from fillyte.wettingfront.cache import attrcache
-from fillyte.wettingfront.readers import fps as get_fps
-from fillyte.wettingfront.readers import frame_count, frame_generator
-from fillyte.wettingfront.writers import CSVWriter, ImageWriter
+from .cache import attrcache
+from .readers import fps as get_fps
+from .readers import frame_count, frame_generator
+from .writers import CSVWriter, ImageWriter
 
 __all__ = [
     "Cathode",

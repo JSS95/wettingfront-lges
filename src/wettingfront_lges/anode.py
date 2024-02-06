@@ -19,9 +19,9 @@ import numpy.typing as npt
 import tqdm  # type: ignore
 from scipy.ndimage import gaussian_filter  # type: ignore[import]
 
-from fillyte.wettingfront.readers import fps as get_fps
-from fillyte.wettingfront.readers import frame_count, frame_generator, frame_shape
-from fillyte.wettingfront.writers import CSVWriter, ImageWriter
+from .readers import fps as get_fps
+from .readers import frame_count, frame_generator, frame_shape
+from .writers import CSVWriter, ImageWriter
 
 __all__ = [
     "read_data",
