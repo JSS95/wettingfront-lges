@@ -1,7 +1,6 @@
 """Image analysis for LGES battery electrolyte filling experiment.
 
-WettingFront-LGES provides analyzers to process separator, anode and cathode
-images.
+WettingFront-LGES provides analyzers to process separator, anode and cathode images.
 """
 
 import sys
@@ -14,6 +13,11 @@ if sys.version_info < (3, 10):
     from importlib_resources import files
 else:
     from importlib.resources import files
+
+
+__all__ = [
+    "get_sample_path",
+]
 
 
 def get_sample_path(*paths: str) -> str:
@@ -38,7 +42,7 @@ def get_sample_path(*paths: str) -> str:
 
 
 def separator_analyzer(k, v):
-    """Analyzer for the separator.
+    """Registered as: ``Separator``.
 
     Entry of the configuration file must have ``parameters`` field, which contains the
     following sub-fields:
@@ -61,15 +65,13 @@ def separator_analyzer(k, v):
             parameters:
                 path: foo.mp4
                 sigma: 1
-                visual_output: output/foo.mp4
                 data_output: output/foo.csv
-                plot_output: output/foo.jpg
     """
     analyze_separator(**v["parameters"], name=k)
 
 
 def anode_analyzer(k, v):
-    """Analyzer for the anode.
+    """Registered as: ``Anode``.
 
     Entry of the configuration file must have ``parameters`` field, which contains the
     following sub-fields:
@@ -92,15 +94,13 @@ def anode_analyzer(k, v):
             parameters:
                 path: foo.mp4
                 sigma: 1
-                visual_output: output/foo.mp4
                 data_output: output/foo.csv
-                plot_output: output/foo.jpg
     """
     analyze_anode(**v["parameters"], name=k)
 
 
 def cathode_analyzer(k, v):
-    """Analyzer for the cathode.
+    """Registered as: ``Cathode``.
 
     Entry of the configuration file must have ``parameters`` field, which contains the
     following sub-fields:
@@ -125,8 +125,6 @@ def cathode_analyzer(k, v):
                 path: foo.mp4
                 y_sigma: 1
                 t_sigma: 1
-                visual_output: output/foo.mp4
                 data_output: output/foo.csv
-                plot_output: output/foo.jpg
     """
     analyze_cathode(**v["parameters"], name=k)

@@ -4,7 +4,6 @@ numpy >= 1.21
 scipy
 opencv-python-headless
 Pillow
-PyYAML
 tqdm
 matplotlib
 fillyte-wettingfront

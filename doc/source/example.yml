@@ -1,0 +1,8 @@
+sep:
+  type: Separator
+  parameters:
+    path: $WETTINGFRONT_SAMPLES/separator.jpg
+    sigma: 1
+    fps: 1.0
+    visual_output: output/separator.jpg
+    data_output: output/separator.csv
