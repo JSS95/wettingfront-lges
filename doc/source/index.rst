@@ -6,7 +6,7 @@
 Welcome to WettingFront-LGES's documentation!
 =============================================
 
-WettingFront-LGES is a plugin of Fillyte-WettingFront to analyze
+WettingFront-LGES is a plugin of WettingFront to analyze
 LGES battery electrolyte wetting (anode, cathode and separator).
 
 Installation
