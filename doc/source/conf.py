@@ -4,6 +4,7 @@
 # https://www.sphinx-doc.org/en/master/usage/configuration.html
 
 import os
+import shutil
 import subprocess
 
 import yaml
@@ -44,9 +45,8 @@ intersphinx_mapping = {
     "python": ("http://docs.python.org/", None),
     "pip": ("https://pip.pypa.io/en/stable/", None),
     "numpy": ("https://numpy.org/doc/stable/", None),
-    "cattrs": ("https://cattrs.readthedocs.io/en/latest/", None),
     "mypy": ("https://mypy.readthedocs.io/en/stable/", None),
-    "PIL": ("https://pillow.readthedocs.io/en/stable/", None),
+    "wettingfront": ("https://wettingfront.readthedocs.io/en/stable/", None),
 }
 
 # -- Options for HTML output -------------------------------------------------
@@ -54,7 +54,7 @@ intersphinx_mapping = {
 
 html_theme = "furo"
 html_title = "WettingFront-LGES"
-html_static_path = []  # type: ignore
+html_static_path = ["_static"]
 
 plot_html_show_formats = False
 plot_html_show_source_link = False
@@ -73,3 +73,6 @@ subprocess.call(
         "example.yml",
     ],
 )
+
+os.makedirs("_static", exist_ok=True)
+shutil.copy("output/separator.mp4", "_static/separator.mp4")

@@ -43,7 +43,7 @@ lges = "wettingfront_lges:get_sample_path"
 
 [project.entry-points."wettingfront.analyzers"]
 Anode = "wettingfront_lges:anode_analyzer"
-Separator = "wettingfront_lges:separator_analyzer"
+Separator = "wettingfront_lges.separator:separator_analyzer"
 
 [tool.setuptools.dynamic]
 dependencies = {file = ["requirements.txt"]}

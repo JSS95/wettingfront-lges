@@ -1,8 +1,11 @@
 sep:
   type: Separator
+  path: $WETTINGFRONT_SAMPLES/separator.mp4
   parameters:
-    path: $WETTINGFRONT_SAMPLES/separator.jpg
     sigma: 1
-    fps: 1.0
-    visual_output: output/separator.jpg
-    data_output: output/separator.csv
+    fov_height: 4.92
+  output:
+    model: output/separator.yml
+    data: output/separator.csv
+    plot: output/separator.jpg
+    vid: output/separator.mp4

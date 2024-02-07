@@ -64,25 +64,28 @@ Examples
 
 Results:
 
-.. figure:: output/separator.jpg
-   :align: center
-   :figwidth: 45%
+.. raw:: html
 
-   :download:`output/separator.jpg`
-
-.. csv-table:: :download:`output/separator.csv`
-   :file: output/separator.csv
-   :header-rows: 1
+    <video controls width="320" height="256">
+        <source src="_static/separator.mp4" type="video/mp4">
+        Your browser does not support the video tag.
+    </video>
 
 API reference
 =============
 
-Configuration file
-------------------
+Analyzers
+---------
+
+Anode
+^^^^^
 
 .. autofunction:: wettingfront_lges.anode_analyzer
 
-.. autofunction:: wettingfront_lges.separator_analyzer
+Separator
+^^^^^^^^^
+
+.. autofunction:: wettingfront_lges.separator.separator_analyzer
 
 Module reference
 ----------------

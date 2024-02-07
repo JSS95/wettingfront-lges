@@ -2,4 +2,6 @@ importlib_resources;python_version<"3.10"
 scipy
 tqdm
 matplotlib
-wettingfront[img]
+wettingfront
+imageio
+av
