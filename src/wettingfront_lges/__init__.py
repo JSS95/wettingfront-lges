@@ -1,7 +1,4 @@
-"""Image analysis for LGES battery electrolyte filling experiment.
-
-WettingFront-LGES provides analyzers to process separator, anode and cathode images.
-"""
+"""Image analysis for LGES battery electrolyte filling experiment."""
 
 import sys
 
@@ -35,10 +32,7 @@ def get_sample_path(*paths: str) -> str:
         >>> get_sample_path("myfile") # doctest: +SKIP
         'path/wettingfront_lges/samples/myfile'
     """
-    sample_path = files("wettingfront_lges.samples")
-    if not paths:
-        return str(sample_path._paths[0])  # type: ignore[attr-defined]
-    return str(sample_path.joinpath(*paths))
+    return str(files("wettingfront_lges").joinpath("samples", *paths))
 
 
 def separator_analyzer(k, v):
