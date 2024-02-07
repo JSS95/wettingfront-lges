@@ -1,7 +1,5 @@
 importlib_resources;python_version<"3.10"
-numpy >= 1.21
 scipy
-opencv-python-headless
-Pillow
 tqdm
 matplotlib
+wettingfront[img]

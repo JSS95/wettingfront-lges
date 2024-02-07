@@ -25,7 +25,6 @@ doc = [
     "sphinx",
     "sphinx-autoapi",
     "sphinx-tabs >= 3.4.5",
-    "PyYAML",
 ]
 dev = [
     "flake8",
@@ -35,7 +34,6 @@ dev = [
     "docformatter",
     "doc8",
     "mypy",
-    "types-Pillow",
     "types-PyYAML",
     "wettingfront-lges[test,doc]",
 ]
@@ -45,7 +43,6 @@ lges = "wettingfront_lges:get_sample_path"
 
 [project.entry-points."wettingfront.analyzers"]
 Anode = "wettingfront_lges:anode_analyzer"
-Cathode = "wettingfront_lges:cathode_analyzer"
 Separator = "wettingfront_lges:separator_analyzer"
 
 [tool.setuptools.dynamic]
@@ -74,7 +71,7 @@ ignore-path = [
 namespace_packages = true
 explicit_package_bases = true
 exclude = ["build"]
-plugins = ["numpy.typing.mypy_plugin"]
+plugins = "numpy.typing.mypy_plugin"
 
 [tool.pytest.ini_options]
 doctest_optionflags = [

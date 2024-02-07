@@ -10,18 +10,15 @@ movement of wetting front.
 # 2. Detection failure if wetting front does not move
 # Solution: recursive prediction (e.g., Kalman filter)
 
+import csv
 import os
 
-import cv2
+import imageio.v3 as iio
 import matplotlib.pyplot as plt
 import numpy as np
 import numpy.typing as npt
 import tqdm  # type: ignore
 from scipy.ndimage import gaussian_filter  # type: ignore[import]
-
-from .readers import fps as get_fps
-from .readers import frame_count, frame_generator, frame_shape
-from .writers import CSVWriter, ImageWriter
 
 __all__ = [
     "read_data",
@@ -58,8 +55,9 @@ def read_data(path: str) -> npt.NDArray[np.float64]:
             >>> plt.imshow(data) #doctest: +SKIP
     """
     ret = []
-    for frame in frame_generator(path):
-        mean = np.mean(frame, axis=1)
+    for frame in iio.imiter(path, plugin="pyav"):
+        gray = np.dot(frame, [0.2989, 0.5870, 0.1140]).astype(np.uint8)
+        mean = np.mean(gray, axis=1)
         ret.append(mean)
     return np.array(ret)
 
@@ -99,90 +97,80 @@ def analyze_anode(
     y_sigma: float,
     t_sigma: float,
     *,
-    fps: float = 0.0,
-    visual_output: str = "",
-    data_output: str = "",
-    plot_output: str = "",
+    out_vid: str = "",
+    out_data: str = "",
+    out_plot: str = "",
     name: str = "",
 ):
-    """Analyze the anode wetting images and save the result.
+    """Analyze the anode wetting video and save the result.
 
     Wetting height is normalized by the height of the image, i.e., ``0`` indicates no
     wetting and ``1`` indicates complete wetting.
 
     Arguments:
-        path: Path to a visual media file containing target images.
-            Can be video file, image file, or their glob pattern.
-            Multipage image file is supported.
+        path: Path to target video file.
         y_sigma: Sigma value for spatial Gaussian smoothing.
         t_sigma: Sigma value for temporal Gaussian smoothing.
-        fps: FPS of the analysis output.
-            If non-zero *fps* is passed, it is used to analyze and save the result.
-            Else, :func:`fps` attempts to get the FPS from *path*.
-        visual_output: Media path where the visual output will be saved.
-        data_output: CSV file path where the data output will be saved.
-        plot_output: Image file path where the data plot will be saved.
+        out_vid: Path to the output video file.
+        out_data: Path to the output CSV file.
+        out_plot: Path to the output plot file.
         name: Name of the analysis displayed on the progress bar.
-
-    Notes:
-        *visual_output* can be video file or image file. Formattable image path is
-        supported to save each frame as separate file. If non-formattable GIF path is
-        passed, frames are saved as multi-page image. Other multi-page image formats are
-        not supported; if non-formattable, non-GIF path if passed, each frame overwrites
-        the previous frame.
     """
-    data = read_data(path)
-    H, W = frame_shape(path)
-    b = detect_wettingfront(data, y_sigma, t_sigma)
 
     def makedir(path):
+        path = os.path.expandvars(path)
         dirname, _ = os.path.split(path)
         if dirname:
             os.makedirs(dirname, exist_ok=True)
+        return path
 
-    if fps == 0.0:
-        FPS = get_fps(path)
-    else:
-        FPS = fps
+    out_vid = makedir(out_vid)
+    out_data = makedir(out_data)
+    out_plot = makedir(out_plot)
 
-    if visual_output:
-        fgen = frame_generator(path)
-        makedir(visual_output)
-        imgwriter = ImageWriter(
-            visual_output,
-            cv2.VideoWriter_fourcc(*"mp4v"),  # type: ignore[attr-defined]
-            FPS,
-        )
-        next(imgwriter)
-    if data_output:
-        makedir(data_output)
-        datawriter = CSVWriter(data_output)
-        next(datawriter)
-        HEADER = ["Wetting height"]
-        if FPS != 0.0:
-            HEADER.insert(0, "time (s)")
-        datawriter.send(HEADER)
-    if plot_output:
-        makedir(plot_output)
+    immeta = iio.immeta(path, plugin="pyav")
+    fps = immeta["fps"]
+    heights = []
+
+    data = read_data(path)
+    b = detect_wettingfront(data, y_sigma, t_sigma)
+
+    if out_vid:
+        codec = immeta["codec"]
+        with iio.imopen(out_vid, "w", plugin="pyav") as out:
+            out.init_video_stream(codec, fps=fps)
+            for frame, h in tqdm.tqdm(
+                zip(iio.imiter(path, plugin="pyav"), b),
+                total=int(fps * immeta["duration"]),
+                desc=name,
+            ):
+                H = frame.shape[0]
+                frame[h, :] = (255, 0, 0)
+                out.write_frame(frame)
+                heights.append(1 - h / H)
+    elif out_data:
+        for frame, h in tqdm.tqdm(
+            zip(iio.imiter(path, plugin="pyav"), b),
+            total=int(fps * immeta["duration"]),
+            desc=name,
+        ):
+            H = frame.shape[0]
+            frame[h, :] = (255, 0, 0)
+            heights.append(1 - h / H)
+
+    if out_data or out_plot:
+        times = np.arange(len(heights)) / fps
+
+    if out_data:
+        with open(out_data, "w", newline="") as f:
+            writer = csv.writer(f)
+            writer.writerow(["time (s)", "Wetting height"])
+            for t, h in zip(times, heights):
+                writer.writerow([t, h])
+
+    if out_plot:
         fig, ax = plt.subplots()
-
-    for i in tqdm.tqdm(range(frame_count(path)), desc=name):
-        y = b[i]
-        if visual_output:
-            image = cv2.cvtColor(next(fgen), cv2.COLOR_GRAY2RGB)
-            cv2.line(image, (0, y), (W, y), (255, 0, 0), 1)
-            imgwriter.send(image)  # type: ignore[arg-type]
-        if data_output:
-            DATA = [1 - y / H]
-            if FPS != 0.0:
-                DATA.insert(0, i / FPS)
-            datawriter.send(DATA)
-    if visual_output:
-        imgwriter.close()
-    if data_output:
-        datawriter.close()
-    if plot_output:
-        ax.plot(1 - b / H)
-        ax.set_xlabel("Frame #")
+        ax.plot(times, heights)
+        ax.set_xlabel("Time (s)")
         ax.set_ylabel("Wetting height [ratio]")
-        fig.savefig(plot_output)
+        fig.savefig(out_plot)

@@ -3,7 +3,6 @@
 import sys
 
 from .anode import analyze_anode
-from .cathode import analyze_cathode
 from .separator import analyze_separator
 
 if sys.version_info < (3, 10):
@@ -91,34 +90,3 @@ def anode_analyzer(k, v):
                 data_output: output/foo.csv
     """
     analyze_anode(**v["parameters"], name=k)
-
-
-def cathode_analyzer(k, v):
-    """Registered as: ``Cathode``.
-
-    Entry of the configuration file must have ``parameters`` field, which contains the
-    following sub-fields:
-
-    - **path**: `str`
-    - **y_sigma**: `number`
-    - **t_sigma**: `number`
-    - **fps**: `number` (optional)
-    - **visual_output**: `str` (optional)
-    - **data_output**: `str` (optional)
-    - **plot_output**: `str` (optional)
-
-    Refer to :func:`~.cathode.analyze_cathode` for more information.
-
-    The following is the example for an YAML entry:
-
-    .. code-block:: yaml
-
-        foo:
-            type: Cathode
-            parameters:
-                path: foo.mp4
-                y_sigma: 1
-                t_sigma: 1
-                data_output: output/foo.csv
-    """
-    analyze_cathode(**v["parameters"], name=k)

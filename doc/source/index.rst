@@ -7,7 +7,7 @@ Welcome to WettingFront-LGES's documentation!
 =============================================
 
 WettingFront-LGES is a plugin of WettingFront to analyze
-LGES battery electrolyte wetting (anode, cathode and separator).
+LGES battery electrolyte wetting (anode and separator).
 
 Installation
 ------------
@@ -81,8 +81,6 @@ Configuration file
 ------------------
 
 .. autofunction:: wettingfront_lges.anode_analyzer
-
-.. autofunction:: wettingfront_lges.cathode_analyzer
 
 .. autofunction:: wettingfront_lges.separator_analyzer
 
