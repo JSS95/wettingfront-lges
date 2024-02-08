@@ -1,4 +1,5 @@
 # Custom entries
+doc/source/_static
 doc/source/output/*
 
 # Byte-compiled / optimized / DLL files

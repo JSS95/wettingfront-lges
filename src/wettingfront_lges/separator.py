@@ -4,24 +4,22 @@ Because separator image has clearly distinguishable regions, the boundary is dir
 acquired from each image.
 """
 
+import csv
 import os
-from typing import Any, List
 
-import cv2
+import imageio.v3 as iio
 import matplotlib.pyplot as plt
 import numpy as np
 import numpy.typing as npt
 import tqdm  # type: ignore
+import yaml
 from scipy.ndimage import gaussian_filter1d  # type: ignore[import]
+from wettingfront import fit_washburn
 
 from .cache import attrcache
-from .readers import fps as get_fps
-from .readers import frame_count, frame_generator
-from .writers import CSVWriter, ImageWriter
 
 __all__ = [
     "Separator",
-    "analyze_separator",
 ]
 
 
@@ -37,26 +35,28 @@ class Separator:
 
     Arguments:
         image: Grayscale target image.
-        sigma: Sigma value for Gaussian blurring.
+        sigma: Sigma value for Gaussian filtering.
+        base: Y coordinate of fluid meniscus.
 
     Examples:
         .. plot::
             :include-source:
             :context: reset
 
-            >>> import cv2
-            >>> from wettingfront_lges import get_sample_path
-            >>> from wettingfront_lges.separator import Separator
-            >>> path = get_sample_path("separator.jpg")
-            >>> img = cv2.imread(path, cv2.IMREAD_GRAYSCALE)
-            >>> sep = Separator(img, sigma=1)
+            >>> import numpy as np, imageio.v3 as iio
+            >>> from wettingfront_lges import get_sample_path, Separator
+            >>> img = iio.imread(get_sample_path("separator.jpg"))
+            >>> gray = np.dot(img, [0.2989, 0.5870, 0.1140]).astype(np.uint8)
+            >>> sep = Separator(gray, sigma=1, base=250)
             >>> sep.wetting_height()
-            54
+            48
             >>> import matplotlib.pyplot as plt #doctest: +SKIP
             >>> plt.imshow(sep.draw()) #doctest: +SKIP
     """
 
-    def __init__(self, image: npt.NDArray[np.uint8], sigma: float):
+    def __init__(
+        self, image: npt.NDArray[np.uint8], sigma: float, base: int | None = None
+    ):
         """Initialize the instance.
 
         *image* is set to be immutable.
@@ -64,6 +64,7 @@ class Separator:
         self._image = image
         self._image.setflags(write=False)
         self._sigma = sigma
+        self._base = base
 
     @property
     def image(self) -> npt.NDArray[np.uint8]:
@@ -76,28 +77,34 @@ class Separator:
 
     @property
     def sigma(self) -> float:
-        """Sigma value for Gaussian blurring.
+        """Sigma value for Gaussian filtering.
 
         Kernel size is automatically determined from sigma.
         """
         return self._sigma
 
-    @attrcache("_ydiff")
+    @property
+    def base(self) -> int:
+        """Y coordinate of fluid meniscus.
+
+        This value is used to determine the actual wetting height.
+        ``None`` indicates the lower edge of image.
+        """
+        if self._base is None:
+            return self.image.shape[0]
+        return self._base
+
     def ydiff(self) -> npt.NDArray[np.float64]:
         """Difference of row-wise averaged pixel intensities.
 
-        Values are smoothed using Gaussian filter with :attr:`self.sigma`. If sigma is
-        zero, the data is not smoothed.
-
-        Note:
-            The result is cached and must not be modified.
+        Values are smoothed using Gaussian filter with :attr:`self.sigma`.
+        If sigma is zero, the data is not smoothed.
         """
         mean = np.mean(self.image, axis=1)
         if self.sigma == 0:
             ret = np.abs(np.diff(mean))
         else:
             ret = np.abs(gaussian_filter1d(mean, self.sigma, order=1))
-        ret.setflags(write=False)
         return ret
 
     @attrcache("_boundary")
@@ -105,108 +112,125 @@ class Separator:
         """Y coordinate where the boundary exists."""
         return np.argmax(self.ydiff())
 
-    def wetting_height(self) -> int:
-        """Distance between :meth:`self.boundary` and the lower edge of the image."""
-        H, _ = self.image.shape
-        return int(H - self.boundary())
+    def wetting_height(self) -> np.int64:
+        """Height of wetting."""
+        return self.base - self.boundary()
 
     def draw(self) -> npt.NDArray[np.uint8]:
         """Return visualization result in RGB format."""
-        image = cv2.cvtColor(self.image, cv2.COLOR_GRAY2RGB)
-        _, W = self.image.shape
+        image = np.repeat(self.image[..., np.newaxis], 3, axis=-1)
         h = self.boundary()
-        cv2.line(image, (0, h), (W, h), (255, 0, 0), 1)
+        image[h, :] = (255, 0, 0)
+        if 0 < self.base and self.base < image.shape[0]:
+            image[self.base, :] = (0, 0, 255)
         return image  # type: ignore[return-value]
 
 
-def analyze_separator(
-    path: str,
-    sigma: float,
-    *,
-    fps: float = 0.0,
-    visual_output: str = "",
-    data_output: str = "",
-    plot_output: str = "",
-    name: str = "",
-):
-    """Analyze the separator wetting images and save the result.
+def separator_analyzer(name, fields):
+    """Image analysis for unidirectional electrolyte imbibition in separator.
 
-    Wetting height is normalized by the height of the image, i.e., ``0`` indicates no
-    wetting and ``1`` indicates complete wetting.
+    The analyzer defines the following fields in configuration entry:
 
-    Arguments:
-        path: Path to a visual media file containing target images.
-            Can be video file, image file, or their glob pattern.
-            Multipage image file is supported.
-        sigma: Sigma value for spatial Gaussian smoothing.
-        fps: FPS of the analysis output.
-            If non-zero *fps* is passed, it is used to analyze and save the result.
-            Else, :func:`fps` attempts to get the FPS from *path*.
-        visual_output: Media path where the visual output will be saved.
-        data_output: CSV file path where the data output will be saved.
-        plot_output: Image file path where the data plot will be saved.
-        name: Name of the analysis displayed on the progress bar.
+    - **path** (`str`): Path to target video file.
+    - **parameters**
+        - **sigma** (`number`): Sigma value for spatial Gaussian smoothing.
+        - **fov_height** (`number`): Height of the field of view in milimeters.
+        - **first_is_base** (`bool`, optional): Whether the first frame's wetting front
+            is baseline.
+    - **output**:
+        - **model** (`str`, optional): Path to the output YAML file.
+            The model file stores model parameters.
+        - **data** (`str`, optional): Path to the output CSV file.
+            The data file stores wetting front data.
+        - **plot** (`str`, optional): Path to the output plot file.
+            The plot file visualizes wetting front data.
+        - **vid** (`str`, optional): Path to the output video file.
+            The video file shows the wetting front in the input video.
 
-    Notes:
-        *visual_output* can be video file or image file. Formattable image path is
-        supported to save each frame as separate file. If non-formattable GIF path is
-        passed, frames are saved as multi-page image. Other multi-page image formats are
-        not supported; if non-formattable, non-GIF path if passed, each frame overwrites
-        the previous frame.
+    The following is an example for an YAML entry:
+
+    .. code-block:: yaml
+
+        foo:
+            type: Separator
+            path: foo.mp4
+            parameters:
+                sigma: 1
+                fov_height: 4
+            output:
+                data: output/foo.csv
     """
+    path = os.path.expandvars(fields["path"])
+
+    sigma = fields["parameters"]["sigma"]
+    fov_height = fields["parameters"]["fov_height"]
+    first_is_base = fields["parameters"].get("first_is_base", False)
 
     def makedir(path):
+        path = os.path.expandvars(path)
         dirname, _ = os.path.split(path)
         if dirname:
             os.makedirs(dirname, exist_ok=True)
+        return path
 
-    if fps == 0.0:
-        FPS = get_fps(path)
-    else:
-        FPS = fps
+    output = fields.get("output", {})
+    output_model = makedir(output.get("model", ""))
+    output_data = makedir(output.get("data", ""))
+    output_plot = makedir(output.get("plot", ""))
+    output_vid = makedir(output.get("vid", ""))
 
-    if visual_output:
-        makedir(visual_output)
-        imgwriter = ImageWriter(
-            visual_output,
-            cv2.VideoWriter_fourcc(*"mp4v"),  # type: ignore[attr-defined]
-            FPS,
-        )
-        next(imgwriter)
-    if data_output:
-        makedir(data_output)
-        datawriter = CSVWriter(data_output)
-        next(datawriter)
-        HEADER = ["Wetting height"]
-        if FPS != 0.0:
-            HEADER.insert(0, "time (s)")
-        datawriter.send(HEADER)
-    if plot_output:
-        makedir(plot_output)
-        wettingheights = []
-        fig, ax = plt.subplots()
+    def yield_result(path):
+        for i, frame in tqdm.tqdm(
+            enumerate(iio.imiter(path, plugin="pyav")),
+            total=int(fps * immeta["duration"]),
+            desc=name,
+        ):
+            H = frame.shape[0]
+            gray = np.dot(frame, [0.2989, 0.5870, 0.1140]).astype(np.uint8)
+            if i == 0:
+                sep = Separator(gray, sigma)
+                base = sep.boundary()
+            else:
+                if first_is_base:
+                    sep = Separator(gray, sigma, base)
+                else:
+                    sep = Separator(gray, sigma)
+            yield sep.draw(), sep.wetting_height() / H * fov_height
 
-    for i, frame in enumerate(
-        tqdm.tqdm(frame_generator(path), total=frame_count(path), desc=name)
-    ):
-        sep = Separator(frame, sigma)
-        H = frame.shape[0]
-        if visual_output:
-            imgwriter.send(sep.draw())
-        if data_output:
-            DATA: List[Any] = [sep.wetting_height() / H]
-            if FPS != 0.0:
-                DATA.insert(0, i / FPS)
-            datawriter.send(DATA)
-        if plot_output:
-            wettingheights.append(sep.wetting_height() / H)
+    immeta = iio.immeta(path, plugin="pyav")
+    fps = immeta["fps"]
+    heights = []
+    if output_vid:
+        codec = immeta["codec"]
+        with iio.imopen(output_vid, "w", plugin="pyav") as out:
+            out.init_video_stream(codec, fps=fps)
+            for frame, h in yield_result(path):
+                out.write_frame(frame)
+                heights.append(h)
+    elif output_data or output_plot:
+        for frame, h in yield_result(path):
+            heights.append(h)
 
-    if visual_output:
-        imgwriter.close()
-    if data_output:
-        datawriter.close()
-    if plot_output:
-        ax.plot(wettingheights)
-        ax.set_xlabel("Frame #")
-        ax.set_ylabel("Wetting height [ratio]")
-        fig.savefig(plot_output)
+    if output_model or output_data or output_plot:
+        times = np.arange(len(heights)) / fps
+        k, a, b = fit_washburn(times, heights)
+        washburn = k * np.sqrt(times - a) + b
+
+        if output_model:
+            with open(output_model, "w") as f:
+                yaml.dump(dict(k=float(k), a=float(a), b=float(b)), f)
+
+        if output_data:
+            with open(output_data, "w", newline="") as f:
+                writer = csv.writer(f)
+                writer.writerow(["time (s)", "height (mm)", "fitted height (mm)"])
+                for t, h, w in zip(times, heights, washburn):
+                    writer.writerow([t, h, w])
+
+        if output_plot:
+            fig, ax = plt.subplots()
+            ax.plot(times, heights, label="data")
+            ax.plot(times, washburn, label="model")
+            ax.set_xlabel("Time (s)")
+            ax.set_ylabel("height (mm)")
+            fig.savefig(output_plot)
