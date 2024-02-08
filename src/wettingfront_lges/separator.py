@@ -215,8 +215,8 @@ def separator_analyzer(name, fields):
 
     if output_model or output_data or output_plot:
         times = np.arange(len(heights)) / fps
-        k, a, b = fit_washburn(times, heights)
-        washburn = k * np.sqrt(times - a) + b
+        func, (k, a, b) = fit_washburn(times, heights)
+        washburn = func(times, k, a, b)
 
         if output_model:
             with open(output_model, "w") as f:
