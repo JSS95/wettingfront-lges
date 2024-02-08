@@ -80,7 +80,7 @@ Analyzers
 Anode
 ^^^^^
 
-.. autofunction:: wettingfront_lges.anode_analyzer
+.. autofunction:: wettingfront_lges.anode.anode_analyzer
 
 Separator
 ^^^^^^^^^
