@@ -44,7 +44,8 @@ class Separator:
             :context: reset
 
             >>> import numpy as np, imageio.v3 as iio
-            >>> from wettingfront_lges import get_sample_path, Separator
+            >>> from wettingfront_lges import get_sample_path
+            >>> from wettingfront_lges.separator import Separator
             >>> img = iio.imread(get_sample_path("separator.jpg"))
             >>> gray = np.dot(img, [0.2989, 0.5870, 0.1140]).astype(np.uint8)
             >>> sep = Separator(gray, sigma=1, base=250)
@@ -179,6 +180,9 @@ def separator_analyzer(name, fields):
     output_plot = makedir(output.get("plot", ""))
     output_vid = makedir(output.get("vid", ""))
 
+    immeta = iio.immeta(path, plugin="pyav")
+    fps = immeta["fps"]
+
     def yield_result(path):
         for i, frame in tqdm.tqdm(
             enumerate(iio.imiter(path, plugin="pyav")),
@@ -197,8 +201,6 @@ def separator_analyzer(name, fields):
                     sep = Separator(gray, sigma)
             yield sep.draw(), sep.wetting_height() / H * fov_height
 
-    immeta = iio.immeta(path, plugin="pyav")
-    fps = immeta["fps"]
     heights = []
     if output_vid:
         codec = immeta["codec"]
@@ -233,4 +235,5 @@ def separator_analyzer(name, fields):
             ax.plot(times, washburn, label="model")
             ax.set_xlabel("Time (s)")
             ax.set_ylabel("height (mm)")
+            ax.legend()
             fig.savefig(output_plot)
