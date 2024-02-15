@@ -191,14 +191,11 @@ def separator_analyzer(name, fields):
         ):
             H = frame.shape[0]
             gray = np.dot(frame, [0.2989, 0.5870, 0.1140]).astype(np.uint8)
-            if i == 0:
-                sep = Separator(gray, sigma)
-                base = sep.boundary()
-            else:
-                if first_is_base:
-                    sep = Separator(gray, sigma, base)
-                else:
-                    sep = Separator(gray, sigma)
+            if not first_is_base:
+                base = None
+            elif i == 0:
+                base = Separator(gray, sigma).boundary()
+            sep = Separator(gray, sigma, base)
             yield sep.draw(), sep.wetting_height() / H * fov_height
 
     heights = []
