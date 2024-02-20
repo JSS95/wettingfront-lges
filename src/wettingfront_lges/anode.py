@@ -11,6 +11,7 @@ movement of wetting front.
 # Solution: recursive prediction (e.g., Kalman filter)
 
 import csv
+from importlib.metadata import entry_points
 import os
 
 import imageio.v3 as iio
@@ -20,7 +21,6 @@ import numpy.typing as npt
 import tqdm  # type: ignore
 import yaml
 from scipy.ndimage import gaussian_filter  # type: ignore[import]
-from wettingfront import fit_washburn
 
 __all__ = [
     "x_means",
@@ -84,6 +84,7 @@ def anode_analyzer(name, fields):
 
     The analyzer defines the following fields in configuration entry:
 
+    - **model** (`str`, optional): Wetting front model, implemented by plugins.
     - **path** (`str`): Path to target video file.
     - **parameters**
         - **sigma_y** (`number`): Sigma value for spatial Gaussian smoothing.
@@ -115,6 +116,13 @@ def anode_analyzer(name, fields):
             output:
                 data: output/foo.csv
     """
+    model = fields.get("model", None)
+    if model is not None:
+        MODELS = {}
+        for ep in entry_points(group="wettingfront.models"):
+            MODELS[ep.name] = ep
+        model = MODELS[model].load()
+
     path = os.path.expandvars(fields["path"])
 
     sigma_y = fields["parameters"]["sigma_y"]
@@ -156,24 +164,33 @@ def anode_analyzer(name, fields):
 
     if output_model or output_data or output_plot:
         times = np.arange(len(heights)) / fps
-        func, (k, a, b) = fit_washburn(times, heights)
-        washburn = func(times, k, a, b)
+        if model is None:
+            params = ()
+        else:
+            func, params = model(times, heights)
+            predict = func(times)
 
         if output_model:
             with open(output_model, "w") as f:
-                yaml.dump(dict(k=float(k), a=float(a), b=float(b)), f)
+                yaml.dump(list(float(p) for p in params), f)
 
         if output_data:
             with open(output_data, "w", newline="") as f:
                 writer = csv.writer(f)
-                writer.writerow(["time (s)", "height (mm)", "fitted height (mm)"])
-                for t, h, w in zip(times, heights, washburn):
-                    writer.writerow([t, h, w])
+                if model is None:
+                    writer.writerow(["time (s)", "height (mm)"])
+                    for t, h in zip(times, heights):
+                        writer.writerow([t, h])
+                else:
+                    writer.writerow(["time (s)", "height (mm)", "fitted height (mm)"])
+                    for t, h, p in zip(times, heights, predict):
+                        writer.writerow([t, h, p])
 
         if output_plot:
             fig, ax = plt.subplots()
             ax.plot(times, heights, label="data")
-            ax.plot(times, washburn, label="model")
+            if model is not None:
+                ax.plot(times, predict, label="model")
             ax.set_xlabel("Time (s)")
             ax.set_ylabel("height (mm)")
             ax.legend()

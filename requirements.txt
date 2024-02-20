@@ -2,6 +2,6 @@ importlib_resources;python_version<"3.10"
 scipy
 tqdm
 matplotlib
-wettingfront >= 1.1.0
+wettingfront >= 1.2.0
 imageio
 av
