@@ -1,5 +1,6 @@
 sep:
   type: Separator
+  model: Washburn_offset
   path: $WETTINGFRONT_SAMPLES/separator.mp4
   parameters:
     sigma: 1
@@ -11,6 +12,7 @@ sep:
     vid: output/separator.mp4
 ano:
   type: Anode
+  model: Washburn_offset
   path: $WETTINGFRONT_SAMPLES/anode.mp4
   parameters:
     sigma_y: 1
