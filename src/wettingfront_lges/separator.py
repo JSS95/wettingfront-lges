@@ -5,8 +5,8 @@ acquired from each image.
 """
 
 import csv
-from importlib.metadata import entry_points
 import os
+from importlib.metadata import entry_points
 
 import imageio.v3 as iio
 import matplotlib.pyplot as plt

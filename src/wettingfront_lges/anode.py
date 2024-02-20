@@ -11,8 +11,8 @@ movement of wetting front.
 # Solution: recursive prediction (e.g., Kalman filter)
 
 import csv
-from importlib.metadata import entry_points
 import os
+from importlib.metadata import entry_points
 
 import imageio.v3 as iio
 import matplotlib.pyplot as plt
@@ -153,9 +153,10 @@ def anode_analyzer(name, fields):
         desc=name + " (read)",
     ):
         xm.append(mean)
+    xm = np.array(xm)
     bds = boundaries(xm, sigma_y, sigma_t)
 
-    H = len(xm)
+    _, H = xm.shape
     if first_is_base:
         base = bds[0]
     else:
