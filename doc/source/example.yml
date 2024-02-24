@@ -23,3 +23,13 @@ ano:
     data: output/anode.csv
     plot: output/anode.jpg
     vid: output/anode.mp4
+cat:
+  type: Cathode
+  path: $WETTINGFRONT_SAMPLES/cathode.mp4
+  parameters:
+    start: 3
+    sigma: 1
+    base: 182
+    peak_height: 1
+  output:
+    vid: output/cathode.mp4
