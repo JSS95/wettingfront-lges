@@ -23,3 +23,18 @@ ano:
     data: output/anode.csv
     plot: output/anode.jpg
     vid: output/anode.mp4
+cat:
+  type: Cathode
+  model: Washburn
+  path: $WETTINGFRONT_SAMPLES/cathode.mp4
+  parameters:
+    fov_height: 4.92
+    start: 3
+    sigma: 1
+    base: 182
+    peak_height: 1
+  output:
+    model: output/cathode.yml
+    data: output/cathode.csv
+    plot: output/cathode.jpg
+    vid: output/cathode.mp4
