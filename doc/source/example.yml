@@ -38,3 +38,9 @@ cat:
     data: output/cathode.csv
     plot: output/cathode.jpg
     vid: output/cathode.mp4
+jr:
+  type: JellyRollWettingFront
+  data: $WETTINGFRONT_SAMPLES/jellyroll.csv
+  output:
+    data: output/jellyroll.csv
+    plot: output/jellyroll.jpg

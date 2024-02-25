@@ -35,6 +35,7 @@ dev = [
     "doc8",
     "mypy",
     "types-PyYAML",
+    "pandas-stubs",
     "wettingfront-lges[test,doc]",
 ]
 
@@ -45,6 +46,7 @@ lges = "wettingfront_lges:get_sample_path"
 Anode = "wettingfront_lges.anode:anode_analyzer"
 Separator = "wettingfront_lges.separator:separator_analyzer"
 Cathode = "wettingfront_lges.cathode:cathode_analyzer"
+JellyRollWettingFront = "wettingfront_lges.jellyroll:jrwtf_analyzer"
 
 [tool.setuptools.dynamic]
 dependencies = {file = ["requirements.txt"]}
