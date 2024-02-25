@@ -54,7 +54,7 @@ def jrwtf_analyzer(name, fields):
     time, height = dt[idx], df["WettingHeight"][idx]
 
     if output_data:
-        pd.DataFrame({"Time (s)": time, "Height (mm)": height}).to_csv(
+        pd.DataFrame({"time (s)": time, "height (mm)": height}).to_csv(
             output_data, index=False
         )
 
@@ -62,5 +62,5 @@ def jrwtf_analyzer(name, fields):
         fig, ax = plt.subplots()
         ax.plot(time, height, "x")
         ax.set_xlabel("Time (s)")
-        ax.set_ylabel("height (mm)")
+        ax.set_ylabel("Height (mm)")
         fig.savefig(output_plot)

@@ -249,6 +249,6 @@ def separator_analyzer(name, fields):
             if model is not None:
                 ax.plot(times, predict, label="model")
             ax.set_xlabel("Time (s)")
-            ax.set_ylabel("height (mm)")
+            ax.set_ylabel("Height (mm)")
             ax.legend()
             fig.savefig(output_plot)
