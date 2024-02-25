@@ -42,5 +42,6 @@ jr:
   type: JellyRollWettingFront
   data: $WETTINGFRONT_SAMPLES/jellyroll.csv
   output:
+    model: output/jellyroll.yml
     data: output/jellyroll.csv
     plot: output/jellyroll.jpg
