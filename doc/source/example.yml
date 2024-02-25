@@ -40,7 +40,9 @@ cat:
     vid: output/cathode.mp4
 jr:
   type: JellyRollWettingFront
+  model: Washburn_jellyroll
   data: $WETTINGFRONT_SAMPLES/jellyroll.csv
   output:
+    model: output/jellyroll.yml
     data: output/jellyroll.csv
     plot: output/jellyroll.jpg
