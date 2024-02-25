@@ -35,6 +35,7 @@ dev = [
     "doc8",
     "mypy",
     "types-PyYAML",
+    "pandas-stubs",
     "wettingfront-lges[test,doc]",
 ]
 
