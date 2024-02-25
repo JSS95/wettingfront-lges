@@ -2,10 +2,46 @@
 
 import os
 from importlib.metadata import entry_points
+from typing import Callable
 
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 import yaml
+from scipy.optimize import curve_fit  # type: ignore[import-untyped]
+
+
+def fit_jrwtf(t, x) -> tuple[Callable, tuple[np.float64]]:
+    r"""Fit data to Washburn's equation [#f1]_ with y-axis offset.
+
+    The data are fitted to:
+
+    .. math::
+
+        x = k \sqrt{ta} + b
+
+    where :math:`k` is penetrativity of the liquid and :math:`b` is offset to
+    compensate entrance length.
+
+    Arguments:
+        t (array_like, shape (M,)): Time.
+        x (array_like, shape (M,)): Penetration length.
+
+    Returns:
+        func
+            Washburn equation function f(t).
+        (k, b)
+            Fitted parameters.
+
+    .. [#f1] Washburn, E. W. (1921). The dynamics of capillary flow.
+             Physical review, 17(3), 273.
+    """
+
+    def func(t, k, b):
+        return k * np.sqrt(t) + b
+
+    ret, _ = curve_fit(func, t, x)
+    return lambda t: func(t, *ret), ret
 
 
 def jrwtf_analyzer(name, fields):
@@ -33,6 +69,7 @@ def jrwtf_analyzer(name, fields):
 
         foo:
             type: JellyRollWettingFront
+            model: Washburn_jellyroll
             data: foo.csv
             output:
                 model: output/model.yml
